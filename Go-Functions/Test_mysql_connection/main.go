@@ -19,8 +19,6 @@ var (
 	db_name  = os.Getenv("rds_db_name")
 )
 
-// var db *sql.DB
-
 func main() {
 	lambda.Start(handler)
 }
