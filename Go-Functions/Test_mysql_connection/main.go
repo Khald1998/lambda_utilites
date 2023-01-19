@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -17,36 +18,45 @@ var (
 	port     = os.Getenv("rds_port")
 	db_name  = os.Getenv("rds_db_name")
 )
-var db *sql.DB
 
-// func init() {
-// 	args := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", username, password, endpoint, port, db_name)
-// 	var err error
-// 	db, err = sql.Open("mysql", args)
-// 	if err != nil {
-// 		log.Fatalln(err)
-// 	}
-
-// }
+// var db *sql.DB
 
 func main() {
 	lambda.Start(handler)
 }
 
-func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	conn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", username, password, endpoint, port, db_name)
-	db, err := sql.Open("mysql", conn)
+func handler(request events.APIGatewayProxyRequest) {
+
+	var open_state string = "Success"
+	var ping_state string = "Success"
+
+	argment := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", username, password, endpoint, port, db_name)
+	connection, err := sql.Open("mysql", argment)
 
 	if err != nil {
-		fmt.Println("Not A Success!")
-		panic(err.Error())
+		open_state = "Not A Success!"
+		log.Fatalf("impossible to create the connection: %s", err)
+		os.Exit(1)
+	} else {
+		log.Printf("Open Connection: %s!", open_state)
+		log.Printf("Connection with %s", argment)
+		log.Println("")
 	}
-	defer db.Close()
-	fmt.Println("Success!")
 
-	return events.APIGatewayProxyResponse{
-		StatusCode: 201,
-	}, nil
+	err = connection.Ping()
+
+	if err != nil {
+		ping_state = "Not A Success!"
+		log.Fatalf("impossible to Ping: %s", err)
+		os.Exit(1)
+	} else {
+		log.Printf("Ping: %s!", ping_state)
+	}
+	// if no error. Ping is successful
+	log.Println("Ping to database successful, connection is still alive")
+
+	connection.Close()
+
 }
 
 //$Env:GOOS = "linux"
